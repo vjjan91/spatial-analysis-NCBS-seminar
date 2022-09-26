@@ -16,4 +16,12 @@ I will then provide an overview of a recently published study that used [citizen
 
 We will then spend some time learning the basics of GitHub and how to implement a reproducible study using R and Git.    
 
+### Code   
+
+The `data/` folder contains the following datasets required to reproduce the above scripts.   
+
+- `barfly_pr.csv`: This .csv contains presence data for the Black-and-orange flycatcher (filtered from eBird).  
+
+- `Nil_Ana_Pal.shp`: A shapefile (along with associated formats) that represents an outline of the Nilgiris and the Anamalai-Palni hills.  
+
 _Caveat_: By no means is this workshop meant to cover all possible types of spatial analyses within R, but the hope is to provide a glimpse of analyses possible. Further, this workshop is meant to cater to users with differing levels of experience in R and spatial analysis and is not meant to be for users with advanced experience in spatial analysis in R.
