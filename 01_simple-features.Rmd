@@ -1,0 +1,170 @@
+---
+editor_options: 
+  chunk_output_type: console
+---
+
+# Examples of simple feature functionality
+
+## Load necessary libraries
+```{r}
+library(sf)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(mapview)
+```
+
+## Load data from the existing folder (/data)
+
+This is a dataset of occurrences of the black-and-orange flycatcher.
+```{r}
+barfly_pr <- read.csv("data/barfly_pr.csv")
+head(barfly_pr)
+```
+
+## Convert it to a shapefile 
+```{r}
+barfly_pr <- st_as_sf(barfly_pr, coords=c("LONGITUDE","LATITUDE"),crs=4326)
+barfly_pr # Let's take a look at it
+class(barfly_pr)
+```
+
+## Basic visualization
+```{r}
+plot(barfly_pr$geometry)
+axis(1)
+axis(2)
+box()
+grid()
+```
+
+## Read in polygon data
+```{r}
+ghats <- st_read("data/Nil_Ana_Pal.shp")
+class(ghats)
+
+# if the coordinate system is known and has not been set
+st_crs(ghats) <- 4326  #"+proj=longlat +datum=WGS84 +no_defs"
+
+# plotting
+plot(ghats[1,], col = 'grey')
+plot(ghats, col = 'green') # terribly bright 
+```
+
+## Transforming coordinate systems
+```{r}
+ghats_proj<- st_transform(ghats, 32643)
+ghats_proj
+```
+
+## Tapping into tidyverse's capabilities for visualization
+
+## Let's use ggplot2() on the nc shapefile 
+## Code adapted from Matt-Strimas Mackey
+
+```{r}
+nc <- st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
+ggplot(nc) +
+  geom_sf(aes(fill = AREA)) +
+  scale_fill_viridis_c("Area") +
+  ggtitle("Area of counties in North Carolina") +
+  theme_bw()
+```
+
+
+# Let's look at dplyr - the gold standard for data manipulation 
+
+## Couple of functions that are very useful for manipulation of simple features:
+## The following verbs operate only on the attribute data and leave the geometries untouched:
+  
+## select() keeps the specified variables, possibly renaming them
+## rename() renames a variable and leaves all others unchanged
+## filter() returns the rows that match the given conditions
+## mutate() adds new variables based on existing variables
+## transmute() creates new variables and drops existing variables
+## arrange() sorts by the given variables
+## slice() selects rows based on row number
+## sample_n() samples n features randomly
+
+## For more such examples, I recommend visiting: http://strimas.com/r/tidy-sf/
+
+## Question usually raised at this point: 
+
+## How do I know what projection to use for my data. Fear not as projectionWizard is here to help - http://projectionwizard.org/
+## Also highly recommend using: https://spatialreference.org/
+
+## Some more visualization examples
+```{r}
+library(rnaturalearth)
+library(rnaturalearthdata) # Wonderful dataset with boundaries, polygons 
+library(rgeos)
+
+world <- ne_countries(scale='medium',returnclass = 'sf')
+class(world)
+
+# basic plot
+ggplot(data = world) +
+  geom_sf() + theme_bw()
+
+# basic plot with legend
+ggplot(data = world) +
+  geom_sf() +
+  xlab("Longitude") + ylab("Latitude") +
+  ggtitle("World map", subtitle = paste0("(", length(unique(world$name)), " countries)")) + theme_bw()
+
+
+```
+
+# goal is to produce several maps - either side by side / or on a grid
+# below code was sourced from r-spatial.org
+```{r}
+(gworld <- ggplot(data = world) +
+    geom_sf(aes(fill = region_wb)) +
+    geom_rect(xmin = -102.15, xmax = -74.12, ymin = 7.65, ymax = 33.97,  # You need the coordinates for this (Unfortunately)
+              fill = NA, colour = "black", size = 1.5) +
+    scale_fill_viridis_d(option = "plasma") +
+    theme(panel.background = element_rect(fill = "azure"),
+          panel.border = element_rect(fill = NA)))
+```
+
+# Let's centre a map on the Gulf of Mexico
+```{r}
+(ggulf <- ggplot(data = world) +
+    geom_sf(aes(fill = region_wb)) +
+    annotate(geom = "text", x = -90, y = 26, label = "Gulf of Mexico", 
+             fontface = "italic", color = "grey22", size = 6) + 
+    coord_sf(xlim = c(-102.15, -74.12), ylim = c(7.65, 33.97), expand = FALSE) + # Note: coord_sf() uses coordinates from the rectangle used earlier
+    scale_fill_viridis_d(option = "plasma") +
+    theme(legend.position = "none", axis.title.x = element_blank(), 
+          axis.title.y = element_blank(), panel.background = element_rect(fill = "azure"), 
+          panel.border = element_rect(fill = NA)))
+
+## what if you want to arrange the above two plots in the same grid
+library(cowplot)
+plot_grid(gworld, ggulf, nrow = 1, rel_widths = c(2.3, 1))
+
+# To save the plots: 
+# ggsave("grid.pdf", width = 15, height =  5)
+
+# also library(patchwork) has very useful functions
+```
+
+
+## Some examples of interactive mapping
+```{r}
+m1 <- mapview(ghats)
+m1
+
+m2 <- mapview(barfly_pr)
+m1+m2
+
+# Edit map interactively:
+library(mapedit)
+
+a <- mapview(ghats) %>% 
+  editMap('ghats')
+
+mapview(a$drawn) + mapview(ghats)
+
+```
+
